@@ -1,0 +1,26 @@
+version: 2.1
+orbs:
+  kubernetes: circleci/kubernetes@0.12.0
+jobs:
+  build:
+    machine: true
+    steps:
+      - checkout
+      - run: echo "$DOCKER_PASSWORD" | docker login --username $DOCKER_USER --password-stdin
+      - run: docker build -t openq/github-oauth-server:$CIRCLE_TAG --build-arg port=3001 --build-arg clientId=$OPENQ_ID --build-arg clientSecret=$OPENQ_SECRET .
+      - run: docker push openq/github-oauth-server:$CIRCLE_TAG
+workflows:
+  version: 2
+  build:
+    jobs:
+      - build:
+          context: OpenQ
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only:
+                - /^local*/
+                - /^development*/
+                - /^staging*/
+                - /^production*/

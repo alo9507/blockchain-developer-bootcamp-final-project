@@ -1,0 +1,38 @@
+{
+  "name": "github-multiapp-oauth-server",
+  "version": "1.0.0",
+  "description": "A simple express server that can easily be configured to serve multiple OAuth apps.",
+  "main": "server.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mktcode/github-multiapp-oauth-server.git"
+  },
+  "keywords": [
+    "github",
+    "oauth",
+    "express"
+  ],
+  "scripts": {
+    "start": "node server.js",
+    "start:dev": "nodemon server.js"
+  },
+  "author": "mktcode",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mktcode/github-multiapp-oauth-server/issues"
+  },
+  "homepage": "https://github.com/mktcode/github-multiapp-oauth-server#readme",
+  "dependencies": {
+    "axios": "^0.21.1",
+    "cookie-parser": "^1.4.5",
+    "cors": "^2.8.5",
+    "dayjs": "^1.10.7",
+    "dotenv": "^10.0.0",
+    "express": "^4.17.1",
+    "jsonwebtoken": "^8.5.1",
+    "nodemon": "^2.0.13"
+  },
+  "devDependencies": {
+    "eslint": "^8.1.0"
+  }
+}

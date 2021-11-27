@@ -1,9 +1,9 @@
 # blockchain-developer-bootcamp-final-project
 
-I'd like to complete work on an idea for a software developer automated bounties system similar to Gitcoin.
+My Ethereum Account: `0x46e09468616365256F11F4544e65cE0C70ee624b`
 
-I've begun work here https://github.com/openqdev with the incomplete marketing website here openq.dev
+Project URL: https://www.development.openq.dev (NOTE: Bounties may take a few seconds to load all data)
 
-Right now the contracts in the bare-bones-refactor branch of the /contracts repo has the basics: UserAddressStorage, DepositStorage, etc.
+Demo Recording: https://drive.google.com/file/d/1o3oVuSEDJpgfqGTN-odQo8uUAEMBXjc3/view
 
-Much remains to be done for the final project though - in particular, implementing a Hash Time Locked Contract for the escrow and possibly using Airnode as an oracle.
+
