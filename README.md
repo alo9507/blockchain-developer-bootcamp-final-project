@@ -26,9 +26,34 @@ Necessary Scopes:
 `repo`
 `user`
 
-### Add WALLET_KEY to contracts and Oracle
-
-This wallet key must be the owner that deployed the OpenQ contract since the oracle is privileged.
-
 ### Booting each Microservice
 
+#### OpenQ-Contracts
+
+```bash
+yarn ethnode
+```
+
+```bash
+yarn deploy:docker
+```
+
+#### OpenQ-Frontend
+
+```bash
+yarn boot:docker
+```
+
+#### OpenQ-Oracle
+
+```bash
+yarn start:dev
+```
+
+#### OpenQ-Github-OAuth-Server
+
+You will need an OAuth client secret to run this successfully. 
+
+```bash
+yarn start:dev
+```
