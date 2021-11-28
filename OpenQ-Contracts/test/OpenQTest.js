@@ -52,6 +52,8 @@ describe('OpenQ.sol', () => {
 		// Since the frontend is listening for this event, it's important that it is emitted correctly
 		it('should emit an IssueCreated event with expected bounty id, issuer address, bounty address, and bountyMintTime', async () => {
 			// ARRANGE
+			// Hardhat mints contracts with predictable addresses
+			// You may need to update this once on first run
 			const bountyAddress = "0x8aCd85898458400f7Db866d53FCFF6f0D49741FF";
 
 			const expectedTimestamp = await setNextBlockTimestamp();
@@ -63,7 +65,8 @@ describe('OpenQ.sol', () => {
 				.withArgs(bountyId, owner.address, bountyAddress, expectedTimestamp);
 		});
 
-		// Hardhat mints contracts predictably
+		// Hardhat mints contracts with predictable addresses
+		// You may need to update this once on first run
 		it('should return correct address for getBountyAddress', async () => {
 			// ARRANGE
 			// ACT
@@ -77,7 +80,7 @@ describe('OpenQ.sol', () => {
 			await expect(actualIssueAddress).to.equal(expectedIssueAddress);
 		});
 
-		// Hardhat mints contracts predictably
+		// We use this array of issue ids to populate the frontend
 		it('should add newly minted issueId to issueIds', async () => {
 			// ARRANGE
 			// ACT
