@@ -1,115 +1,103 @@
+const { BigNumber } = require('@ethersproject/bignumber');
 const { expect } = require('chai');
 require('@nomiclabs/hardhat-waffle');
 const truffleAssert = require('truffle-assertions');
-const { bigNumberToEtherFloat } = require('./utils');
 
-describe('OpenQ contract', () => {
-	const issueStatusEnum = ['OPEN', 'CLAIMED'];
+describe('OpenQ.sol', () => {
+	let openQ;
+	let owner;
+	let mockToken;
+	let fakeToken;
+	let bountyId = 'mockIssueId';
 
-	it('depositEthForIssue should associate issueId to amount on msg.value', async () => {
-		// Instantiate contract and set up
-		const UserAddressStorage = await ethers.getContractFactory('UserAddressStorage');
-		const userAddressStorage = await UserAddressStorage.deploy();
-
-		const DepositStorage = await ethers.getContractFactory('DepositStorage');
-		const depositStorage = await DepositStorage.deploy();
-
+	beforeEach(async () => {
 		const OpenQ = await ethers.getContractFactory('OpenQ');
-		const openQ = await OpenQ.deploy(userAddressStorage.address, depositStorage.address);
+		const MockToken = await ethers.getContractFactory('MockToken');
+		const FakeToken = await ethers.getContractFactory('FakeToken');
 
-		await depositStorage.setOpenQ(openQ.address);
-		await userAddressStorage.setOpenQ(openQ.address);
+		[owner] = await ethers.getSigners();
 
-		const mockIssueId = 'mockIssueId';
+		openQ = await OpenQ.deploy();
+		await openQ.deployed();
 
-		let overrides = {
-			value: ethers.utils.parseEther('1.0')
-		};
-
-		await openQ.depositEthForIssue('mockIssueId', overrides);
-
-		const depositAmount = await depositStorage.issueDepositsAmountByIssueId(mockIssueId);
-
-		expect(ethers.utils.formatEther(depositAmount)).to.equal('1.0');
+		mockToken = await MockToken.deploy();
+		await mockToken.deployed();
+		fakeToken = await FakeToken.deploy();
+		await fakeToken.deployed();
 	});
 
-	it('should register user', async () => {
-		const UserAddressStorage = await ethers.getContractFactory('UserAddressStorage');
-		const userAddressStorage = await UserAddressStorage.deploy();
+	describe('mintBounty', () => {
+		// We don't want duplicate bounties. Funds should organize around one issue.
+		it('should revert if bounty already exists', async () => {
+			// ARRANGE
+			// ACT
+			await openQ.mintBounty(bountyId);
 
-		const DepositStorage = await ethers.getContractFactory('DepositStorage');
-		const depositStorage = await DepositStorage.deploy();
+			// ASSERT
+			await expect(openQ.mintBounty(bountyId)).to.be.revertedWith('Issue already exists for given id. Find its address by calling issueToAddress on this contract with the issueId');
+		});
 
-		const OpenQ = await ethers.getContractFactory('OpenQ');
-		const openQ = await OpenQ.deploy(userAddressStorage.address, depositStorage.address);
+		// Open issues should be labelled as such
+		it('should correctly report if bounty is open', async () => {
+			// ARRANGE
+			// ACT
+			await openQ.mintBounty(bountyId);
 
-		await depositStorage.setOpenQ(openQ.address);
-		await userAddressStorage.setOpenQ(openQ.address);
+			const isOpen = await openQ.issueIsOpen(bountyId);
 
-		const address = '0xc3e53F4d16Ae77Db1c982e75a937B9f60FE63690';
-		const gitHubUsername = 'alo9507';
+			// ASSERT
+			await expect(isOpen).to.equal(true);
+		});
 
-		// insert new user
-		await openQ.registerUserAddress(gitHubUsername, address);
-		expect(await userAddressStorage.addresses(gitHubUsername)).to.equal(address);
-		expect(await userAddressStorage.userIdsByAddress(address)).to.equal(gitHubUsername);
+		// Since the frontend is listening for this event, it's important that it is emitted correctly
+		it('should emit an IssueCreated event with expected bounty id, issuer address, bounty address, and bountyMintTime', async () => {
+			// ARRANGE
+			const bountyAddress = "0x8aCd85898458400f7Db866d53FCFF6f0D49741FF";
 
-		// update existing user
-		const newAddress = '0x947F3FC93AB8b74C44F837d3031347DDBb32cf08';
+			const expectedTimestamp = await setNextBlockTimestamp();
 
-		await openQ.registerUserAddress(gitHubUsername, newAddress);
-		expect(await userAddressStorage.addresses(gitHubUsername)).to.equal(newAddress);
-		expect(await userAddressStorage.userIdsByAddress(newAddress)).to.equal(gitHubUsername);
-	});
+			// ACT
+			// ASSERT
+			await expect(openQ.mintBounty(bountyId))
+				.to.emit(openQ, 'IssueCreated')
+				.withArgs(bountyId, owner.address, bountyAddress, expectedTimestamp);
+		});
 
-	it('withdrawIssueDeposit should send deposit amount to claimers address and remove the issueId', async () => {
-		const UserAddressStorage = await ethers.getContractFactory('UserAddressStorage');
-		const userAddressStorage = await UserAddressStorage.deploy();
+		// Hardhat mints contracts predictably
+		it('should return correct address for getBountyAddress', async () => {
+			// ARRANGE
+			// ACT
+			const expectedIssueAddress = "0x32467b43BFa67273FC7dDda0999Ee9A12F2AaA08";
 
-		const DepositStorage = await ethers.getContractFactory('DepositStorage');
-		const depositStorage = await DepositStorage.deploy();
+			await openQ.mintBounty(bountyId);
 
-		const OpenQ = await ethers.getContractFactory('OpenQ');
-		const openQ = await OpenQ.deploy(userAddressStorage.address, depositStorage.address);
+			const actualIssueAddress = await openQ.getBountyAddress(bountyId);
 
-		await depositStorage.setOpenQ(openQ.address);
-		await userAddressStorage.setOpenQ(openQ.address);
+			// ASSERT
+			await expect(actualIssueAddress).to.equal(expectedIssueAddress);
+		});
 
-		// Fund issue
-		const mockIssueId = 'mockIssueId';
-		let overrides = {
-			value: ethers.utils.parseEther('1.0')
-		};
-		await openQ.depositEthForIssue('mockIssueId', overrides);
+		// Hardhat mints contracts predictably
+		it('should add newly minted issueId to issueIds', async () => {
+			// ARRANGE
+			// ACT
+			await openQ.mintBounty(bountyId);
 
-		// Fetch a contractor account
-		const accounts = await ethers.getSigners();
-		const contractor = accounts[1];
+			const newBoutnyId = await openQ.issueIds(0);
 
-		// Fetch a contractor account
-		const contractorBalanceBefore = bigNumberToEtherFloat(await ethers.provider.getBalance(contractor.address));
-
-		const gitHubUsername = 'alo9507';
-
-		// insert new user
-		await openQ.registerUserAddress(gitHubUsername, contractor.address);
-
-		// Withdraw issue deposit
-		const payoutAmount = bigNumberToEtherFloat(await depositStorage.issueDepositsAmountByIssueId(mockIssueId));
-		await openQ.withdrawIssueDeposit('mockIssueId', 'alo9507');
-
-		// Fetch new contractor balance
-		const contractorBalanceAfter = bigNumberToEtherFloat(await ethers.provider.getBalance(contractor.address));
-
-		// Expect contractor balance to be approximately contractorBalanceBefore + payoutAmount
-		expect(contractorBalanceAfter).to.equal(contractorBalanceBefore + payoutAmount);
-
-		// Expect issueId to have amount 0
-		const payoutAmountAfter = bigNumberToEtherFloat(await depositStorage.issueDepositsAmountByIssueId(mockIssueId));
-		expect(payoutAmountAfter).to.equal(0);
-
-		// Expect issue to be claimed
-		const status = await depositStorage.issueStatusByIssueId(mockIssueId);
-		expect(issueStatusEnum[status]).to.equal('CLAIMED');
+			// ASSERT
+			await expect(newBoutnyId).to.equal(bountyId);
+		});
 	});
 });
+
+async function setNextBlockTimestamp(timestamp = 10) {
+	return new Promise(async (resolve,) => {
+		const blockNumBefore = await hre.ethers.provider.getBlockNumber();
+		const blockBefore = await hre.ethers.provider.getBlock(blockNumBefore);
+		const timestampBefore = blockBefore.timestamp;
+		const expectedTimestamp = timestampBefore + timestamp;
+		await network.provider.send("evm_setNextBlockTimestamp", [expectedTimestamp]);
+		resolve(expectedTimestamp);
+	});
+}

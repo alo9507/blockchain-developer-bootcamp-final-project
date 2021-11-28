@@ -1,6 +1,6 @@
 // contracts/MockToken.sol
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity 0.8.4;
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
 
@@ -70,6 +70,9 @@ contract Issue is Ownable {
             'This is issue is closed. Cannot withdraw again.'
         );
 
+        status = IssueStatus.CLOSED;
+        closer = _payoutAddress;
+
         for (uint256 i; i < tokenAddresses.length; i++) {
             ERC20 tokenContract = ERC20(tokenAddresses[i]);
             tokenContract.transfer(
@@ -77,7 +80,5 @@ contract Issue is Ownable {
                 tokenContract.balanceOf(address(this))
             );
         }
-        status = IssueStatus.CLOSED;
-        closer = _payoutAddress;
     }
 }

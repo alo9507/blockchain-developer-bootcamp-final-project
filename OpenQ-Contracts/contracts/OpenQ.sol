@@ -1,6 +1,6 @@
 // contracts/MockToken.sol
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity 0.8.4;
 import './Issue.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
 
@@ -14,7 +14,6 @@ contract OpenQ is Ownable {
         string issueId,
         address indexed issuer,
         address indexed issueAddress,
-        address[] tokenAddresses,
         uint256 issueTime
     );
 
@@ -47,13 +46,7 @@ contract OpenQ is Ownable {
         addressToIssue[issueAddress] = _id;
         issueIds.push(_id);
 
-        emit IssueCreated(
-            _id,
-            msg.sender,
-            issueAddress,
-            tokenAddresses,
-            block.timestamp
-        );
+        emit IssueCreated(_id, msg.sender, issueAddress, block.timestamp);
 
         return issueAddress;
     }
